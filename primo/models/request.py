@@ -80,7 +80,6 @@ class SearchBriefRequest(BaseRequest):
         locations.append(location)
         self.psr.append(locations)
 
-
     def add_query_term(self, value, index_field="any", precision_operator="contains"):
         """Add a query term to the search request
         :param value:
