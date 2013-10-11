@@ -14,25 +14,54 @@ PRIMO_NSMAP = {None: PRIMO_NS_URI}
 
 class BaseRequest(object):
 
-    def __init__(self, request, institution, group, on_campus, ip):
-        self.request_root = etree.Element(request, nsmap=REQUEST_NSMAP)
+    def __init__(self, method_name, institution, group, on_campus, ip):
+        """Base request
+        :param method_name: name of the method to be used
+        :param institution: code of the institution (PRIMO)
+        :param group: code of the group (PRIMO)
+        :param on_campus: true/false (PRIMO)
+        :param ip: string representing IP address (PRIMO)
+        """
+        self.request_root = etree.Element(method_name, nsmap=REQUEST_NSMAP)
         self.request_root.append(self._add_element('institution', institution))
         self.request_root.append(self._add_element('group', group))
         self.request_root.append(self._add_element('onCampus', on_campus))
         self.request_root.append(self._add_element('ip', ip))
 
+    @staticmethod
+    def _add_element(name, value):
+        e = etree.Element(name)
+        e.text = value
+        return e
+
+    @staticmethod
+    def _int_to_str(value):
+        return str(value)
+
 
 class SearchBriefRequest(BaseRequest):
 
-    def __init__(self, institution, group, on_campus, ip, query_terms_bool_operator="AND"):
+    def __init__(self, institution, group, on_campus, ip, query_terms_bool_operator="AND", start_index=1, bulk_size=10):
+        """
+        Search brief
+        (params institution, group, on_campus, ip as per BaseRequest)
+        :param query_terms_bool_operator: operator AND/OR to be used between QueryTerms
+        :param start_index: first item to retrieve
+        :param bulk_size: number of items to retrieve
+        """
         super(SearchBriefRequest, self).__init__('searchRequest', institution, group, on_campus, ip)
+        self.start_index = start_index
+        self.bulk_size = bulk_size
         self.psr = etree.Element('PrimoSearchRequest', nsmap=PRIMO_NSMAP)
         self.query_terms = etree.Element('QueryTerms')
         self.query_terms.append(self._add_element('BoolOpeator', query_terms_bool_operator))
 
     def _append_psr_parameters(self):
-        self.psr.append(self._add_element('StartIndex', "1"))
-        self.psr.append(self._add_element('BulkSize', "20"))
+        """PrimoSearchRequest parameters to be appended
+        *after* the <QueryTerms> (doesn't seem to work otherwise...??)
+        """
+        self.psr.append(self._add_element('StartIndex', self._int_to_str(self.start_index)))
+        self.psr.append(self._add_element('BulkSize', self._int_to_str(self.bulk_size)))
         self.psr.append(self._add_element('DidUMeanEnabled', "false"))
         self.psr.append(self._add_element('HighlightingEnabled', "false"))
 
@@ -51,6 +80,7 @@ class SearchBriefRequest(BaseRequest):
         locations.append(location)
         self.psr.append(locations)
 
+
     def add_query_term(self, value, index_field="any", precision_operator="contains"):
         """Add a query term to the search request
         :param value:
@@ -68,10 +98,3 @@ class SearchBriefRequest(BaseRequest):
         self._append_psr_parameters()
         self.request_root.append(self.psr)
         return etree.tostring(self.request_root)
-
-    @staticmethod
-    def _add_element(name, value):
-        e = etree.Element(name)
-        e.text = value
-        return e
-
