@@ -67,7 +67,7 @@ class SearchBriefRequest(BaseRequest):
         self.psr.append(self.query_terms)
         self._append_psr_parameters()
         self.request_root.append(self.psr)
-        return etree.tostring(self.request_root, pretty_print=True)
+        return etree.tostring(self.request_root)
 
     @staticmethod
     def _add_element(name, value):

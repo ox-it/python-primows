@@ -8,8 +8,7 @@ class SearchService(object):
         self.client = Client(url)
 
     def search_brief(self, request):
-        print request
         response = self.client.service.searchBrief(request)
         xml_str = response.encode('ascii', 'ignore')
-        print xml_str
-        print ElementTree.ElementTree(ElementTree.fromstring(xml_str))
+        tree = ElementTree.ElementTree(ElementTree.fromstring(xml_str))
+        print list(tree.iter())
